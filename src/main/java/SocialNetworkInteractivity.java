@@ -13,10 +13,7 @@ public class SocialNetworkInteractivity implements AutoCloseable{
     private final Driver driver;
 
     public SocialNetworkInteractivity() {
-        driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic(
-                System.getenv("LOGIN"),
-                System.getenv("PASSWORD"))
-        );
+        driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("", ""));
         executeInitialScript();
     }
 
