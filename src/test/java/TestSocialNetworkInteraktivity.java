@@ -83,11 +83,6 @@ public class TestSocialNetworkInteraktivity {
     }
 
     @Test
-    public void getTweetsWithLengthMore() {
-        Assert.assertNotNull(socialNetworkInteractivity.getTweetsWithLengthMore(10));
-    }
-
-    @Test
     public void getUsersWithTweets() {
         Assert.assertNotNull(socialNetworkInteractivity.getUsersWithTweets());
     }
