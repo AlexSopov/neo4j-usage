@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 
 public class SocialNetworkInteractivity implements AutoCloseable{
 
@@ -21,7 +20,7 @@ public class SocialNetworkInteractivity implements AutoCloseable{
         executeInitialScript();
     }
 
-    private List<Record> executeStatement(String statement, Map<String,Object> parameters) {
+    private List<Record> executeStatement(String statement) {
         try ( Session session = driver.session() )
         {
             // Execute transaction on current session
@@ -29,8 +28,7 @@ public class SocialNetworkInteractivity implements AutoCloseable{
 
                 // Prepare statement for execution and execute it
                 StatementResult statementResult = work.run(
-                        statement,
-                        parameters
+                        statement
                 );
 
                 // Exhaust the result
@@ -38,9 +36,6 @@ public class SocialNetworkInteractivity implements AutoCloseable{
                 return statementResult.list();
             });
         }
-    }
-    private List<Record> executeStatement(String statement) {
-        return executeStatement(statement, null);
     }
 
     private void executeInitialScript() {
@@ -60,13 +55,13 @@ public class SocialNetworkInteractivity implements AutoCloseable{
         }
     }
 
-    private List<Record> getSortedNamesList() {
+    public List<Record> getSortedNamesList() {
         String statement = "MATCH (person:Person) RETURN person.surname, " +
                 "person.name ORDER BY person.surname, person.name";
 
         return executeStatement(statement);
     }
-    private List<Record> getMalesWithAge() {
+    public List<Record> getMalesWithAge() {
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
         String statement = String.format("MATCH (person:Person) WHERE person.gender=1 " +
                 "RETURN person.surname, person.name, %d-person.birthdate as age " +
@@ -74,50 +69,50 @@ public class SocialNetworkInteractivity implements AutoCloseable{
 
         return executeStatement(statement);
     }
-    private List<Record> getFriendsFor(String login) {
+    public List<Record> getFriendsFor(String login) {
         String statement = String.format("MATCH (person:Person)-[:FRIENDS]-(friends) " +
                 "WHERE person.surname=\"%s\" RETURN friends.surname, friends.name", login);
 
         return executeStatement(statement);
     }
-    private List<Record> getFriendsFriendsFor(String login) {
+    public List<Record> getFriendsFriendsFor(String login) {
         String statement = String.format("MATCH (person:Person)-[:FRIENDS]-(firstFriends)-" +
                 "[:FRIENDS]-(secondFriends) WHERE person.surname=\"%s\" " +
                 "RETURN DISTINCT secondFriends.surname, secondFriends.name", login);
 
         return executeStatement(statement);
     }
-    private List<Record> getFriendsCount() {
+    public List<Record> getFriendsCount() {
         String statement = "MATCH (person:Person)-[:FRIENDS]-(friends) " +
                 "RETURN person.surname, count(friends) as friendsCount ORDER BY friendsCount";
 
         return executeStatement(statement);
     }
-    private List<Record> getSocialNetworks() {
+    public List<Record> getSocialNetworks() {
         String statement = "MATCH (group:Group) RETURN group.groupname ORDER BY group.groupname";
 
         return executeStatement(statement);
     }
-    private List<Record> getSocialNetworksFor(String login) {
+    public List<Record> getSocialNetworksFor(String login) {
         String statement = String.format("MATCH (person:Person)-[:IN_GROUP]-(groups) WHERE " +
                 "person.surname=\"%s\" RETURN person.surname, " +
                 "groups.groupname ORDER BY groups.groupname", login);
 
         return executeStatement(statement);
     }
-    private List<Record> getSocialNetworksWithUsersCount() {
+    public List<Record> getSocialNetworksWithUsersCount() {
         String statement = "MATCH (group:Group)-[:IN_GROUP]-(person) RETURN " +
                 "group.groupname, count(person) as personsCount ORDER BY personsCount DESC";
 
         return executeStatement(statement);
     }
-    private List<Record> getUsersWithSocialNetworksCount() {
+    public List<Record> getUsersWithSocialNetworksCount() {
         String statement = "MATCH (person:Person)-[:IN_GROUP]-(groups) RETURN person.surname, " +
                 "count(groups) as groupsCount ORDER BY groupsCount DESC";
 
         return executeStatement(statement);
     }
-    private List<Record> getFriendsSocialNetworksCountFor(String login) {
+    public List<Record> getFriendsSocialNetworksCountFor(String login) {
         String statement = String.format("MATCH (person:Person)-[:FRIENDS]-(firstFriends)-[:FRIENDS]-(secondFriends)-[:IN_GROUP]-" +
                 "(groups) WHERE person.surname=\"%s\" RETURN " +
                 "count(DISTINCT groups.groupname)", login);
@@ -131,18 +126,17 @@ public class SocialNetworkInteractivity implements AutoCloseable{
         return executeStatement(statement);
     }
     public List<Record> getTweetsAverageLengthForUsers() {
-        String statement = "MATCH (person:Person) WITH\n" +
-                "person.surname as surname," +
-                "EXTRACT(tweet in person.tweets | size(tweet)) as tweetsSize" +
-                "UNWIND tweetsSize as tweetsSizeC" +
-                "RETURN surname, AVG(tweetsSizeC)";
+        String statement = "MATCH (person:Person) WITH " +
+                "person.surname as surname, " +
+                "EXTRACT(tweet in person.tweets | size(tweet)) as tweetsSize " +
+                "UNWIND tweetsSize as tweetsSizeC " +
+                "RETURN surname, AVG(tweetsSizeC) ";
 
         return executeStatement(statement);
     }
-
     public List<Record> getTweetsWithLengthMore(int length) {
         String statement = String.format("MATCH (person:Person) WITH COLLECT(person.tweets) as tweets RETURN " +
-                "filter(x IN REDUCE(out=[], r IN tweets | out + r) WHERE size(x)>%d))", length);
+                "filter(x IN REDUCE(out=[], r IN tweets | out + r) WHERE size(x)>%d)", length);
 
         return executeStatement(statement);
     }
